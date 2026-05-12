@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VOID SLOTS — math-to-emotion visualization</title>
+  <meta name="description" content="A timeline visualization showing how VOID SLOTS' verified math creates the player's emotional ride, across two contrasting $20 sessions.">
+
+  <!-- Open Graph for link previews -->
+  <meta property="og:title" content="VOID SLOTS — math-to-emotion">
+  <meta property="og:description" content="Two simulated $20 sessions, scored against a three-channel emotional model. Same math; different luck.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="math_to_emotion_bust.png">
+
+  <style>
+    /* -------- reset + base -------- */
+    *,*::before,*::after { box-sizing: border-box; }
+    html,body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   "Helvetica Neue", Arial, sans-serif;
+      background: #07070b;
+      color: #d0d0e0;
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #c8a8e8; }
+    a:hover { color: #ffd6f5; }
+
+    /* -------- layout -------- */
+    .wrap {
+      max-width: 1520px;
+      margin: 0 auto;
+      padding: 36px 24px 64px;
+    }
+
+    /* -------- header -------- */
+    header { text-align: center; margin-bottom: 28px; }
+    h1 {
+      font-size: clamp(22px, 3.4vw, 32px);
+      letter-spacing: 0.10em;
+      font-weight: 800;
+      margin: 0 0 10px 0;
+      background: linear-gradient(110deg, #ff5fda 0%, #c46cff 35%, #5fc7ff 70%, #ffd700 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+    .tagline {
+      color: #8a8a9c;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* -------- tabs -------- */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      margin: 0 0 12px 0;
+      padding: 0;
+      border-bottom: 1px solid #2a2a3a;
+      list-style: none;
+    }
+    .tab {
+      flex: 1 1 0;
+      padding: 14px 20px;
+      background: transparent;
+      color: #888;
+      border: none;
+      cursor: pointer;
+      font: inherit;
+      text-align: left;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    .tab:hover { color: #c8c8d8; background: #11111a; }
+    .tab.active {
+      color: #fff;
+      border-bottom-color: #a050c8;
+      background: #11111a;
+    }
+    .tab-title {
+      display: block;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .tab-desc {
+      display: block;
+      font-weight: 400;
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+    .tab.active .tab-desc { color: #a8a8b8; }
+
+    /* -------- visualization frame -------- */
+    .viz-frame {
+      background: #ffffff;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(160, 80, 200, 0.18),
+                  0 0 0 1px rgba(160, 80, 200, 0.10);
+      position: relative;
+    }
+    .viz-pane { display: none; }
+    .viz-pane.active { display: block; }
+    .viz-pane iframe {
+      width: 100%;
+      height: 800px;
+      border: 0;
+      display: block;
+    }
+    .viz-hint {
+      padding: 10px 16px;
+      background: #fafafe;
+      border-top: 1px solid #ececf2;
+      color: #6c6c80;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    /* -------- companion text -------- */
+    .companion {
+      margin-top: 56px;
+      padding: 28px 32px;
+      background: #10101a;
+      border-left: 3px solid #a050c8;
+      border-radius: 4px;
+    }
+    .companion h2 {
+      font-size: 16px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #fff;
+      margin: 0 0 18px 0;
+    }
+    .companion h3 {
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #c8a8e8;
+      margin: 22px 0 8px 0;
+    }
+    .companion p {
+      margin: 0 0 12px 0;
+      color: #b0b0c0;
+      font-size: 15px;
+    }
+    .companion strong { color: #e8e8f0; }
+
+    /* -------- emotional model: channel cards + calibration callout -------- */
+    .model-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin: 18px 0 6px 0;
+    }
+    .model-card {
+      background: #15151e;
+      border-radius: 4px;
+      padding: 16px 16px 14px 16px;
+      border-top: 2px solid;
+    }
+    .model-card.anticipation { border-color: #17becf; }
+    .model-card.tension      { border-color: #d62728; }
+    .model-card.elation      { border-color: #daa520; }
+    .model-card h4 {
+      margin: 0 0 10px 0;
+      font-size: 12px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+    }
+    .model-card.anticipation h4 { color: #5fc8d8; }
+    .model-card.tension      h4 { color: #e85a5a; }
+    .model-card.elation      h4 { color: #e0b840; }
+    .model-card .formula {
+      display: block;
+      font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      background: #08080d;
+      padding: 8px 10px;
+      border-radius: 3px;
+      color: #c8c8d8;
+      margin: 0 0 14px 0;
+      word-break: break-word;
+    }
+    .driver { margin-bottom: 10px; }
+    .driver:last-child { margin-bottom: 0; }
+    .driver-name {
+      display: block;
+      color: #cfcfd9;
+      font-weight: 600;
+      font-size: 12px;
+      font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+      margin-bottom: 3px;
+    }
+    .driver-desc {
+      display: block;
+      font-size: 12px;
+      color: #888;
+      line-height: 1.55;
+    }
+    .callout {
+      margin: 22px 0 6px 0;
+      padding: 14px 18px 16px 18px;
+      background: #1a1422;
+      border-left: 3px solid #ffaa00;
+      border-radius: 3px;
+    }
+    .callout-title {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #ffaa00;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .callout p {
+      margin: 0;
+      font-size: 14px;
+      color: #b8b8c8;
+    }
+
+    /* -------- comparison table -------- */
+    .compare {
+      margin: 20px 0 12px 0;
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .compare th, .compare td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #1f1f2a;
+    }
+    .compare th {
+      color: #888;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .compare th.col-bust    { color: #ff7c7c; }
+    .compare th.col-cashout { color: #5fd5a0; }
+    .compare td { color: #b0b0c0; }
+    .compare tr:last-child th, .compare tr:last-child td { border-bottom: 0; }
+    .compare .em { color: #fff; font-weight: 600; }
+
+    /* -------- footer -------- */
+    footer {
+      margin-top: 48px;
+      text-align: center;
+      color: #555;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+    footer code {
+      background: #15151e;
+      padding: 1px 6px;
+      border-radius: 3px;
+      color: #888;
+      font-size: 11px;
+    }
+
+    /* -------- responsive -------- */
+    @media (max-width: 900px) {
+      .model-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .wrap { padding: 24px 14px 48px; }
+      .tabs { flex-direction: column; }
+      .tab { border-bottom: 1px solid #2a2a3a; }
+      .tab.active { border-left: 2px solid #a050c8; border-bottom-color: #2a2a3a; }
+      .viz-pane iframe { height: 620px; }
+      .companion { padding: 20px 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <header>
+      <h1>VOID&nbsp;SLOTS &mdash; MATH&nbsp;TO&nbsp;EMOTION</h1>
+      <p class="tagline">
+        Two simulated $20 sessions on the verified game math, scored against a
+        three-channel emotional model. Toggle between them to see how the same
+        math produces opposite felt experiences.
+      </p>
+    </header>
+
+    <!-- TAB BAR -->
+    <ul class="tabs" role="tablist">
+      <li>
+        <button class="tab active" data-target="bust"
+                role="tab" aria-selected="true" aria-controls="pane-bust">
+          <span class="tab-title">BUST example</span>
+          <span class="tab-desc">3 INVERTs &middot; peak tension 0.83 &middot; ended $0.00</span>
+        </button>
+      </li>
+      <li>
+        <button class="tab" data-target="cashout"
+                role="tab" aria-selected="false" aria-controls="pane-cashout">
+          <span class="tab-title">CASHOUT example</span>
+          <span class="tab-desc">2 INVERTs &middot; peak elation 0.80 &middot; cashed out $30.50</span>
+        </button>
+      </li>
+    </ul>
+
+    <!-- VISUALIZATIONS -->
+    <div class="viz-frame">
+      <div class="viz-pane active" id="pane-bust" role="tabpanel"
+           aria-labelledby="tab-bust">
+        <iframe src="math_to_emotion_bust.html"
+                title="BUST example &mdash; interactive timeline"
+                loading="eager"></iframe>
+        <div class="viz-hint">
+          Hover any marker for spin detail &middot; drag-select to zoom &middot;
+          double-click to reset &middot; click a legend entry to toggle a trace
+        </div>
+      </div>
+      <div class="viz-pane" id="pane-cashout" role="tabpanel"
+           aria-labelledby="tab-cashout">
+        <iframe src="math_to_emotion_cashout.html"
+                title="CASHOUT example &mdash; interactive timeline"
+                loading="lazy"></iframe>
+        <div class="viz-hint">
+          Hover any marker for spin detail &middot; drag-select to zoom &middot;
+          double-click to reset &middot; click a legend entry to toggle a trace
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPANION -->
+    <article class="companion">
+      <h2>About this visualization</h2>
+
+      <h3>What it shows</h3>
+      <p>
+        Two single VOID&nbsp;SLOTS sessions on a $20 starting bankroll, simulated
+        with the verified game math, displayed as two-track timelines. The
+        protagonist of each is the <strong>INVERT progress bar</strong> &mdash;
+        the bonus mechanic that converts dry spells into anticipation, surfaced
+        visually as the shaded purple regions on every track when the bar
+        fills and INVERT activates. Two tracks share a common spin-index axis:
+        <strong>bankroll over time</strong> (with win and near-miss markers)
+        and <strong>three emotional channels</strong> &mdash; Anticipation,
+        Tension, Elation &mdash; computed from the per-spin log via a stated
+        psychological model with disclosed coefficients.
+      </p>
+
+      <table class="compare">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="col-bust">BUST example</th>
+            <th class="col-cashout">CASHOUT example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th>Outcome</th>      <td>Bust at $0</td>           <td>Cashout at $30.50 (1.5&times;)</td></tr>
+          <tr><th>Duration</th>     <td>~3.6 min, 69 spins</td>   <td>~2.8 min, 52 spins</td></tr>
+          <tr><th>INVERTs</th>      <td>3</td>                    <td>2</td></tr>
+          <tr><th>Longest dry spell</th> <td>15 spins</td>        <td>11 spins</td></tr>
+          <tr><th>Near-misses</th>  <td>2</td>                    <td>4</td></tr>
+          <tr><th>Peak tension</th>      <td class="em">0.83</td> <td>0.39</td></tr>
+          <tr><th>Peak elation</th>      <td>0.71</td>            <td class="em">0.80</td></tr>
+          <tr><th>Peak anticipation</th> <td>0.70</td>            <td class="em">0.79</td></tr>
+        </tbody>
+      </table>
+
+      <h3>The emotional model</h3>
+      <p>
+        Each channel is a sum of named drivers, each scaled by a coefficient
+        from <code>EmotionConfig</code> in <code>emotional_model.py</code>.
+        Channels are clamped to <code>[0, 1]</code>.
+      </p>
+
+      <div class="model-grid">
+
+        <div class="model-card anticipation">
+          <h4>Anticipation</h4>
+          <code class="formula">A = 0.7 &times; (bar_fill / 12) + near_miss_residual</code>
+          <div class="driver">
+            <span class="driver-name">bar_fill_weight = 0.7</span>
+            <span class="driver-desc">Bar at 12/12 contributes 0.70. The bar is the dominant driver &mdash; the mechanic that converts dry spells into anticipation.</span>
+          </div>
+          <div class="driver">
+            <span class="driver-name">near_miss_bump = +0.15</span>
+            <span class="driver-desc">Each 2-of-3-stars near-miss adds a temporary spike on top of the bar-fill base.</span>
+          </div>
+          <div class="driver">
+            <span class="driver-name">near_miss_decay = &times;0.7 / spin</span>
+            <span class="driver-desc">Near-miss residual decays over roughly three subsequent spins.</span>
+          </div>
+          <div class="driver">
+            <span class="driver-name">INVERT consumes anticipation</span>
+            <span class="driver-desc">Hard reset on activation; bar drops to 0, residual cleared.</span>
+          </div>
+        </div>
+
+        <div class="model-card tension">
+          <h4>Tension</h4>
+          <code class="formula">T = 0.5 &times; min(dry / 15, 1) + 0.4 &times; max(0, 1 &minus; bankroll / start)</code>
+          <div class="driver">
+            <span class="driver-name">dry_spell_weight = 0.5</span>
+            <span class="driver-desc">Maximum contribution from a long losing streak.</span>
+          </div>
+          <div class="driver">
+            <span class="driver-name">dry_spell_saturation = 15 spins</span>
+            <span class="driver-desc">The dry-spell driver caps at 15 (close to the Schilling-expected longest losing run at this hit frequency).</span>
+          </div>
+          <div class="driver">
+            <span class="driver-name">bankroll_dip_weight = 0.4</span>
+            <span class="driver-desc">Maximum contribution from bankroll falling below the session start; reaches 0.4 at $0.</span>
+          </div>
+          <div class="driver">
+            <span class="driver-name">pure state function</span>
+            <span class="driver-desc">No history-dependent decay; both inputs drop on a win, so relief is automatic.</span>
+          </div>
+        </div>
+
+        <div class="model-card elation">
+          <h4>Elation</h4>
+          <code class="formula">E = 0.6 &times; E_prev + 0.2 &times; log&#8322;(1 + payout / bet) [+ 0.3 if INVERT]</code>
+          <div class="driver">
+            <span class="driver-name">elation_log_coeff = 0.2</span>
+            <span class="driver-desc">Win spike scaled by log&#8322;(1 + payout/bet). $1.50 &rarr; 0.26; $5 &rarr; 0.52; $50 &rarr; 1.00 (capped).</span>
+          </div>
+          <div class="driver">
+            <span class="driver-name">elation_invert_bump = +0.3</span>
+            <span class="driver-desc">Additive on INVERT activation regardless of payout &mdash; the visual transformation itself has affect.</span>
+          </div>
+          <div class="driver">
+            <span class="driver-name">elation_decay = &times;0.6 / spin</span>
+            <span class="driver-desc">Elation roughly halves every 1.4 spins.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="callout">
+        <span class="callout-title">Calibration roadmap</span>
+        <p>
+          These coefficients are hand-picked for legibility on the two
+          examples shown, not derived from any player dataset. The
+          magnitudes are not real measurements. For this kind of
+          visualization to inform real design decisions, the coefficients
+          would need to be calibrated against player data gathered from real
+          player research. Please view this model as a structural sketch of
+          how math <em>could</em> map to feeling, not as a quantitative
+          claim about how it does.
+        </p>
+      </div>
+
+      <h3>What it omits</h3>
+      <p>
+        Population-level statistics (each is one session, not a distribution),
+        cross-session memory, auto-spin compression, and any individual
+        player&rsquo;s actual affect. Sub-bet wins (&ldquo;losses disguised as
+        wins&rdquo;) aren&rsquo;t a lever in VOID&nbsp;SLOTS, so they
+        aren&rsquo;t shown. The emotional model itself is a stated heuristic
+        &mdash; see <em>The emotional model</em> and <em>Calibration
+        roadmap</em> above.
+      </p>
+
+      <h3>What it makes visible that a histogram cannot</h3>
+      <p>
+        A histogram tells you 60% of $20 sessions bust. It cannot tell you
+        which 60% felt cheated and which 60% had a good ride before busting.
+        The bust example shows three INVERT activations that still ended in
+        $0 &mdash; peak-end pain a histogram averages away. The cashout
+        example shows the alternative path: same probabilities, different
+        luck, completely different felt experience.
+      </p>
+    </article>
+
+    <footer>
+      <p>
+        Built with Python, Plotly, and a stated three-channel emotional model.
+        Source: <code>session_generator.py</code>, <code>emotional_model.py</code>,
+        <code>math_to_emotion.ipynb</code>.
+      </p>
+    </footer>
+
+  </div>
+
+  <script>
+    // Simple tab switcher. Vanilla JS, no framework dependency.
+    const tabs  = document.querySelectorAll(".tab");
+    const panes = document.querySelectorAll(".viz-pane");
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        const target = tab.dataset.target;
+        tabs.forEach(t => {
+          const on = t === tab;
+          t.classList.toggle("active", on);
+          t.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        panes.forEach(p => {
+          p.classList.toggle("active", p.id === "pane-" + target);
+        });
+        // Update URL hash for deep-linking (e.g. share /index.html#cashout)
+        history.replaceState(null, "", "#" + target);
+      });
+    });
+
+    // Open on the tab matching the URL hash, if present.
+    const hash = (window.location.hash || "#bust").slice(1);
+    const initial = document.querySelector('.tab[data-target="' + hash + '"]');
+    if (initial && !initial.classList.contains("active")) initial.click();
+  </script>
+</body>
+</html>
